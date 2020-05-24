@@ -27,7 +27,7 @@ class VMWareAPI {
 	
 	// Set this to false to disable SSL checking, true to enforce 
 	// strict SSL compliance
-	public $strictSSL = false;
+	public $strictSSL = true;
 
 	// Minimum time (in microseconds) to wait between calls to the 
 	// API.  Use this to do some rate limiting on the API server
@@ -38,11 +38,11 @@ class VMWareAPI {
 	// otherwise will send a blank string.
 	// Note: for direct API calls, this will return the raw XML from
 	//       the server.
-	public $sendRaw = true;
+	public $sendRaw = false;
 	
 	// Send back the HTTP headers from the API server, if applicable,
 	// otherwise will send back a blank string.
-	public $sendHeaders = true;
+	public $sendHeaders = false;
 	
 	// Send back the resulting object in JSON form
 	public $sendJson = true;
