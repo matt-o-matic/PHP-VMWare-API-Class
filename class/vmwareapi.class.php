@@ -4,11 +4,6 @@
 // Copyright 2020 P Matthew Bradford
 // Free for anyone to use or modify.
 
-// Dependencies:
-// 		DOMDocumentExtended.class.php - By Mathieu Bouchard
-
-include_once "DOMDocumentExtended.class.php";
-
 class VMWareAPI {
 
 	/**************************************************************************
@@ -27,7 +22,7 @@ class VMWareAPI {
 	
 	// Set this to false to disable SSL checking, true to enforce 
 	// strict SSL compliance
-	public $strictSSL = true;
+	public $strictSSL = false;
 
 	// Minimum time (in microseconds) to wait between calls to the 
 	// API.  Use this to do some rate limiting on the API server
@@ -38,11 +33,11 @@ class VMWareAPI {
 	// otherwise will send a blank string.
 	// Note: for direct API calls, this will return the raw XML from
 	//       the server.
-	public $sendRaw = false;
+	public $sendRaw = true;
 	
 	// Send back the HTTP headers from the API server, if applicable,
 	// otherwise will send back a blank string.
-	public $sendHeaders = false;
+	public $sendHeaders = true;
 	
 	// Send back the resulting object in JSON form
 	public $sendJson = true;
@@ -195,19 +190,19 @@ class VMWareAPI {
 					</soapenv:Envelope>";
 			
 			$this->lastRaw = $this->_callApi($xml);
-			$this->lastJson = $this->xml2json($this->lastRaw, ["returnval"]);
+			$this->lastJson = $this->xml2json($this->lastRaw);
 			$this->lastArray = json_decode($this->lastJson, true);
 			if ($this->lastArray == false) $result['error'] = $this->lastRaw;
-			elseif (isset($this->lastArray['Envelope']['Body'][$api_function . 'Response'])) $this->lastArray = $this->lastArray['Envelope']['Body'][$api_function . 'Response'];
-			elseif (isset($this->lastArray['Envelope']['Body'])) $this->lastArray = $this->lastArray['Envelope']['Body'];
+			elseif (isset($this->lastArray[$api_function . 'Response'])) $this->lastArray = $this->lastArray[$api_function . 'Response'];
+			elseif (isset($this->lastArray)) $this->lastArray = $this->lastArray;
 
 			if ($this->sendRaw) $result['raw'] = $this->lastRaw;
 			if ($this->sendHeaders) $result['headers'] = $this->lastHeaders;
 			if ($this->sendJson) $result['json'] = $this->lastJson;
 			if ($this->sendArray) $result['array'] = $this->lastArray;
 			
-			$tmp = json_decode($result['json'], true);
-			$this->api_info = $tmp['Envelope']['Body']['RetrieveServiceContentResponse']['returnval'][0];
+			$tmp = json_decode($this->lastJson, true);
+			$this->api_info = $tmp[$api_function . 'Response']['returnval'];
 			//print_r($this->api_info);
 		} else {
 			$result['error'] = "URL is not set.";
@@ -254,11 +249,11 @@ class VMWareAPI {
 				</SOAP-ENV:Envelope>";
 			
 			$this->lastRaw = $this->_callApi($xml);
-			$this->lastJson = $this->xml2json($this->lastRaw, ["returnval"]);
+			$this->lastJson = $this->xml2json($this->lastRaw);
 			$this->lastArray = json_decode($this->lastJson, true);
 			if ($this->lastArray == false) $result['error'] = $this->lastRaw;
-			elseif (isset($this->lastArray['Envelope']['Body'][$api_function . 'Response'])) $this->lastArray = $this->lastArray['Envelope']['Body'][$api_function . 'Response'];
-			elseif (isset($this->lastArray['Envelope']['Body'])) $this->lastArray = $this->lastArray['Envelope']['Body'];
+			elseif (isset($this->lastArray[$api_function . 'Response'])) $this->lastArray = $this->lastArray[$api_function . 'Response'];
+			elseif (isset($this->lastArray)) $this->lastArray = $this->lastArray;
 			
 			if ($this->sendRaw) $result['raw'] = $this->lastRaw;
 			if ($this->sendHeaders) $result['headers'] = $this->lastHeaders;
@@ -355,11 +350,11 @@ class VMWareAPI {
 				</SOAP-ENV:Envelope>";
 		
 		$this->lastRaw = $this->_callApi($xml);
-		$this->lastJson = $this->xml2json($this->lastRaw, ["returnval"]);
+		$this->lastJson = $this->xml2json($this->lastRaw);
 		$this->lastArray = json_decode($this->lastJson, true);
 		if ($this->lastArray == false) $result['error'] = $this->lastRaw;
-		elseif (isset($this->lastArray['Envelope']['Body'][$api_function . 'Response'])) $this->lastArray = $this->lastArray['Envelope']['Body'][$api_function . 'Response'];
-		elseif (isset($this->lastArray['Envelope']['Body'])) $this->lastArray = $this->lastArray['Envelope']['Body'];
+		elseif (isset($this->lastArray[$api_function . 'Response'])) $this->lastArray = $this->lastArray[$api_function . 'Response'];
+		elseif (isset($this->lastArray)) $this->lastArray = $this->lastArray;
 		
 		if ($this->sendRaw) $result['raw'] = $this->lastRaw;
 		if ($this->sendHeaders) $result['headers'] = $this->lastHeaders;
@@ -421,11 +416,11 @@ class VMWareAPI {
 					</soapenv:Envelope>";
 
 		$this->lastRaw = $this->_callApi($xml);
-		$this->lastJson = $this->xml2json($this->lastRaw, ["returnval"]);
+		$this->lastJson = $this->xml2json($this->lastRaw);
 		$this->lastArray = json_decode($this->lastJson, true);
 		if ($this->lastArray == false) $result['error'] = $this->lastRaw;
-		elseif (isset($this->lastArray['Envelope']['Body'][$api_function . 'Response'])) $this->lastArray = $this->lastArray['Envelope']['Body'][$api_function . 'Response'];
-		elseif (isset($this->lastArray['Envelope']['Body'])) $this->lastArray = $this->lastArray['Envelope']['Body'];
+		elseif (isset($this->lastArray[$api_function . 'Response'])) $this->lastArray = $this->lastArray[$api_function . 'Response'];
+		elseif (isset($this->lastArray)) $this->lastArray = $this->lastArray;
 		
 		if ($this->sendRaw) $result['raw'] = $this->lastRaw;
 		if ($this->sendHeaders) $result['headers'] = $this->lastHeaders;
@@ -473,11 +468,11 @@ class VMWareAPI {
 				</soapenv:Envelope>";
 
 		$this->lastRaw = $this->_callApi($xml);
-		$this->lastJson = $this->xml2json($this->lastRaw, ["returnval","value"]);
+		$this->lastJson = $this->xml2json($this->lastRaw);
 		$this->lastArray = json_decode($this->lastJson, true);
 		if ($this->lastArray == false) $result['error'] = $this->lastRaw;
-		elseif (isset($this->lastArray['Envelope']['Body'][$api_function . 'Response'])) $this->lastArray = $this->lastArray['Envelope']['Body'][$api_function . 'Response'];
-		elseif (isset($this->lastArray['Envelope']['Body'])) $this->lastArray = $this->lastArray['Envelope']['Body'];
+		elseif (isset($this->lastArray[$api_function . 'Response'])) $this->lastArray = $this->lastArray[$api_function . 'Response'];
+		elseif (isset($this->lastArray)) $this->lastArray = $this->lastArray;
 		
 		if ($this->sendRaw) $result['raw'] = $this->lastRaw;
 		if ($this->sendHeaders) $result['headers'] = $this->lastHeaders;
@@ -493,8 +488,8 @@ class VMWareAPI {
 			Required:
 				$itemType: Should be one of: VirtualMachine, ComputeResource, VirtualSwitch, VirtualPortGroup, etc
 				$itemId: The name of the item to be queried.  Must be of the type specified in "itemType"
-				$metricArray: An array object containing only the "id" and "instance" elements.  
-						Ex. ["id"=>2, "instance"=>""]
+				$metricArray: An array of array objects containing only the "id" and "instance" elements.  
+						Ex. [ ["id"=>2, "instance"=>""], ["id"=>266, "instance"=>"FILEGROUP"] ]
 			Optional:
 				$format: "xml" or "csv" -- default: csv
 				$beginTime: Any date/time string
@@ -515,7 +510,7 @@ class VMWareAPI {
 		}
 
 		if (is_array($metricArray) == false || count($metricArray) == 0) {
-			$result['error'] = "Invalid function call, must supply array of metric definitions [\"id\"=>2, \"instance\"=>\"\"]";
+			$result['error'] = "Invalid function call, must supply array of metric definitions.  ex: [ [\"id\"=>2, \"instance\"=>\"\"], [\"id\"=>266, \"instance\"=>\"FILEGROUP\"] ]";
 			return $result;
 		}
 		
@@ -534,15 +529,17 @@ class VMWareAPI {
 		if ($endTime != "") $endTimeXML = "<urn:endTime>" . gmdate("Y-m-d\\TH:i:s\\Z", strtotime($endTime)) . "</urn:endTime>";
 		if ($maxSample != -1) $maxSampleXML = "<urn:maxSample>" . htmlspecialchars($maxSample, ENT_XML1, 'UTF-8') . "</urn:maxSample>";
 		if ($intervalId != -1) $intervalIdXML = "<urn:intervalId>" . htmlspecialchars($intervalId, ENT_XML1, 'UTF-8') . "</urn:intervalId>";
-
-		if (!isset($metricArray['id']) || !isset($metricArray['instance'])) {
-			$result['error'] = "Malformed array of metric definitions.  Each entry must have id and instance.";
-			return $result;
+		
+		foreach ($metricArray as $ma) {
+			if (!isset($ma['id']) || !isset($ma['instance'])) {
+				$result['error'] = "Malformed array of metric definitions.  Each entry must have id and instance.";
+				return $result;
+			}
+			$metricArrayXML .= "<urn:metricId>\n";
+			$metricArrayXML .= "	<urn:counterId>" . ($ma['id']+0) . "</urn:counterId>\n";
+			$metricArrayXML .= "	<urn:instance>" . htmlspecialchars($ma['instance'], ENT_XML1, 'UTF-8') . "</urn:instance>\n";
+			$metricArrayXML .= "</urn:metricId>\n";
 		}
-		$metricArrayXML .= "<urn:metricId>\n";
-		$metricArrayXML .= "	<urn:counterId>" . ($metricArray['id']+0) . "</urn:counterId>\n";
-		$metricArrayXML .= "	<urn:instance>" . htmlspecialchars($metricArray['instance'], ENT_XML1, 'UTF-8') . "</urn:instance>\n";
-		$metricArrayXML .= "</urn:metricId>\n";
 
 		$xml = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:urn=\"urn:vim25\">
 					<soapenv:Header/>
@@ -563,11 +560,11 @@ class VMWareAPI {
 				</soapenv:Envelope>";
 
 		$this->lastRaw = $this->_callApi($xml);
-		$this->lastJson = $this->xml2json($this->lastRaw, ["returnval"]);
+		$this->lastJson = $this->xml2json($this->lastRaw);
 		$this->lastArray = json_decode($this->lastJson, true);
 		if ($this->lastArray == false) $result['error'] = $this->lastRaw;
-		elseif (isset($this->lastArray['Envelope']['Body'][$api_function . 'Response'])) $this->lastArray = $this->lastArray['Envelope']['Body'][$api_function . 'Response'];
-		elseif (isset($this->lastArray['Envelope']['Body'])) $this->lastArray = $this->lastArray['Envelope']['Body'];
+		elseif (isset($this->lastArray[$api_function . 'Response'])) $this->lastArray = $this->lastArray[$api_function . 'Response'];
+		elseif (isset($this->lastArray)) $this->lastArray = $this->lastArray;
 		
 		if ($this->sendRaw) $result['raw'] = $this->lastRaw;
 		if ($this->sendHeaders) $result['headers'] = $this->lastHeaders;
@@ -640,7 +637,7 @@ class VMWareAPI {
 		
 		foreach ($vmKeys as $key) {
 			$vmList[$key]['metric_defs'] = [];
-			$res = $this->getAvailMetrics("VirtualMachine", $vm['obj_id']);
+			$res = $this->getAvailMetrics("VirtualMachine", $vmList[$key]['obj_id']);
 			foreach ($res['array']['returnval'] as $metricDef) {
 				$vmList[$key]['metric_defs'][] = $metricDef;
 				$metricIds[] = $metricDef['counterId'];
@@ -681,6 +678,116 @@ class VMWareAPI {
 		}
 		if ($this->sendArray) {
 			$result['array'] = $vmList;
+			$result['metricArray'] = $metricDetails;
+		}
+
+		return $result;
+	}
+
+	public function getHosts() {
+		/*
+			This routine retrieves all Hosts and formats them in a nicely readable array/json
+			
+			RETURNS:
+			Object containing the ID and Name of each Host/ComputeResource
+		*/
+		$result = $this->prepResult();
+		
+		if (!$this->validSession) {
+			$result['error'] = "Must log in before issuing commands";
+			return $result;
+		}
+		
+		$this->restoreResultConfig();
+		$this->saveResultConfig();
+		$this->quickSetResultConfig(false, false, false, true);
+		$res = $this->getInventoryInfo("ComputeResource", "hostFolder", ["name"], false);
+		$this->restoreResultConfig();
+
+		$hostList = [];
+		
+		foreach ($res["array"]["returnval"] as $host) {
+			$hostItem = ["obj_id"=>$host["obj"], "name"=>$host["propSet"]["val"]];
+			$hostList[$host["obj"]] = $hostItem;
+		}
+		
+		if ($this->sendRaw) $result['raw'] = "";
+		if ($this->sendHeaders) $result['headers'] = "";
+		if ($this->sendJson) $result['json'] = json_encode($hostList);
+		if ($this->sendArray) $result['array'] = $hostList;
+		
+		return $result;
+	}
+
+	public function getHostMetricDefs() {
+		/*
+			This routine retrieves all Host/ComputeResources along with the 
+			available metrics for each of them and formats them in a nicely 
+			readable array/json
+			
+			RETURNS:
+				- Object of metric definitions associated to hosts
+				- Object of all metric definitions
+		*/
+		$result = $this->prepResult();
+		
+		if (!$this->validSession) {
+			$result['error'] = "Must log in before issuing commands";
+			return $result;
+		}
+		
+		$this->restoreResultConfig();
+		$hostList = $this->getHosts();
+		$this->saveResultConfig();
+		$this->quickSetResultConfig(false, false, false, true);
+		$hostList = $hostList['array'];
+		$metricIds = [];
+		$hostKeys = [];
+		foreach ($hostList as $key=>$host) $hostKeys[] = $key;
+		
+		foreach ($hostKeys as $key) {
+			$hostList[$key]['metric_defs'] = [];
+			$res = $this->getAvailMetrics("ComputeResource", $hostList[$key]['obj_id']);
+			foreach ($res['array']['returnval'] as $metricDef) {
+				$hostList[$key]['metric_defs'][] = $metricDef;
+				$metricIds[] = $metricDef['counterId'];
+			}
+		}
+		
+		$metricIds = array_unique($metricIds);
+		$res = $this->getMetricInfo($metricIds);
+		$this->restoreResultConfig();
+		$metricDetails = [];
+
+		foreach ($res['array']['returnval'] as $raw_metric) {
+			$metricDetails[$raw_metric['key']] = [
+				"counterId"=>$raw_metric['key'],
+				"name"=>$raw_metric['groupInfo']['label'] . " - " . $raw_metric['nameInfo']['label'],
+				"desc"=>$raw_metric['nameInfo']['summary'],
+				"unit"=>$raw_metric['unitInfo']['label'],
+				"rollupType"=>$raw_metric['rollupType'],
+				"statsType"=>$raw_metric['statsType'],
+				"level"=>$raw_metric['level']
+			];
+		}
+		
+		foreach ($hostKeys as $key) {
+			foreach ($hostList[$key]['metric_defs'] as $idx=>$md) {
+				$instance = $md['instance'];
+				$counterId = $md['counterId'];
+				$hostList[$key]['metric_defs'][$idx] = $metricDetails[$counterId];
+				$hostList[$key]['metric_defs'][$idx]['instance'] = $instance;
+			}
+		}
+		
+		if ($this->sendRaw) $result['raw'] = "";
+		if ($this->sendHeaders) $result['headers'] = "";
+		if ($this->sendJson) {
+			$result['json'] = json_encode($hostList);
+			$result['metricJson'] = json_encode($metricDetails);
+		}
+		if ($this->sendArray) {
+			$result['array'] = $hostList;
 			$result['metricArray'] = $metricDetails;
 		}
 
@@ -744,10 +851,27 @@ class VMWareAPI {
 		return $head;
 	}
 	
-	private function xml2json($xml_string, $force_array = []) {
-		$document = new DOMDocumentExtended();
-		$document->loadXML($xml_string);
-		return $document->saveJSON($force_array);
+	private function xml2json($xml_string) {
+		$xml = simplexml_load_string($xml_string);
+		if ($xml === false) {
+			echo "Failed loading XML: ";
+			foreach(libxml_get_errors() as $error) {
+				echo $error->message . "\n";
+			}
+			die();
+		}
+		
+		foreach($xml->getDocNamespaces() as $strPrefix => $strNamespace) {
+			if(strlen($strPrefix)==0) {
+				$strPrefix="a"; //Assign an arbitrary namespace prefix.
+			}
+			$xml->registerXPathNamespace($strPrefix,$strNamespace);
+		}
+		
+		$body = $xml->xpath('soapenv:Body')[0];
+		
+		return json_encode($body);
+		
 	}
 	
 	private function prepResult() {

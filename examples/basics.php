@@ -27,7 +27,7 @@ $res = $api->getMetricInfo([2,6,12,24,85,86,90,98,102,125,133,143,155,266,267,26
 print_r($res);
 
 // Choose a metric and get some actual telemetry 
-$res = $api->getMetricValues("VirtualMachine", "vm-1844", ["id"=>125, "instance"=>""], "csv", "2020-05-22 6:30pm", "2020-05-22 7:30pm");
+$res = $api->getMetricValues("VirtualMachine", "vm-1234", ["id"=>125, "instance"=>""], "csv", "2020-05-22 6:30pm", "2020-05-22 7:30pm");
 print_r($res);
 
 
