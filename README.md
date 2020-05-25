@@ -1,9 +1,6 @@
 # VMWareAPI version 0.1
 Copyright (c) 2020 P Matthew Bradford
 
-## Dependencies:
-DOMDocumentExtended.class.php - By Mathieu Bouchard - https://gist.github.com/matb33/1206054/f756c247fadfb93b8e271119925facb72e0be458
-
 ## Description
 An API for VMWare designed to gather performance telemetry from a VMWare installation that is easy to use.
 
