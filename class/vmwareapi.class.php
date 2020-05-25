@@ -260,8 +260,8 @@ class VMWareAPI {
 			if ($this->sendJson) $result['json'] = $this->lastJson;
 			if ($this->sendArray) $result['array'] = $this->lastArray;
 
-			if (isset($result['headers']['Set-Cookie'])) {
-				$this->headers[] = "Cookie: " . $result['headers']['Set-Cookie'];
+			if (isset($this->lastHeaders['Set-Cookie'])) {
+				$this->headers[] = "Cookie: " . $this->lastHeaders['Set-Cookie'];
 				$this->validSession = true;
 			} else {
 				$result['error'] = "Session cookie not found during login.";
@@ -273,12 +273,11 @@ class VMWareAPI {
 		return $result;
 	}
 
-	public function getInventoryInfo($itemType = "", $folder = "", $filters = ["guest","summary"], $getAll = false) {
+	public function getInventoryInfo($itemType = "", $filters = ["guest","summary"], $getAll = false) {
 		/*
 			This routine gets the ID and instances of the available metrics for a given item/time/interval.
 			Required:
 				$itemType: Should be one of: VirtualMachine, ComputeResource, HostSystem, VirtualSwitch, VirtualPortGroup, DistributedVirtualSwitch, DistributedVirtualPortgroup, etc
-				$folder: The name of the root folder to query.  Valid entries include: "vmFolder", "hostFolder", "networkFolder"
 			Optional:
 				$filters: The specific pieces of the tree to grab for each resource
 				$getAll: Boolean value... get all available data
@@ -290,7 +289,7 @@ class VMWareAPI {
 		$result = $this->prepResult();
 		$api_function = "RetrieveProperties";
 		
-		if ($itemType == "" || $folder == "") {
+		if ($itemType == "") {
 			$result['error'] = "Invalid function call, must supply itemType and itemID";
 			return $result;
 		}
@@ -306,48 +305,141 @@ class VMWareAPI {
 		}
 
 		$filterXML = "";
-		foreach ($filters as $filter) $filterXML .= "<ns1:pathSet>" . htmlspecialchars($filter, ENT_XML1, 'UTF-8') . "</ns1:pathSet>\n";
-
-		$xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-				<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:ns1=\"urn:vim25\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">
-				  <SOAP-ENV:Body>
-					  <ns1:" . $api_function . ">
-					  <ns1:_this type=\"PropertyCollector\">" . $this->api_info['propertyCollector'] . "</ns1:_this>
-					  <ns1:specSet>
-						<ns1:propSet>
-						  <ns1:type>" . htmlspecialchars($itemType, ENT_XML1, 'UTF-8') . "</ns1:type>
-						  <ns1:all>" . ($getAll?"true":"false") . "</ns1:all>
-						  " . $filterXML . "
-						</ns1:propSet>
-						<ns1:objectSet>
-						  <ns1:obj type=\"Folder\">" . $this->api_info['rootFolder'] . "</ns1:obj>
-						  <ns1:skip>false</ns1:skip>
-						  <ns1:selectSet xsi:type=\"TraversalSpec\">
-							<name>FolderTraversalSpec</name>
-							<type>Folder</type>
-							<path>childEntity</path>
+		foreach ($filters as $filter) $filterXML .= "<pathSet>" . htmlspecialchars($filter, ENT_XML1, 'UTF-8') . "</pathSet>\n";
+				
+		$xml = '<?xml version="1.0" encoding="UTF-8"?>
+            <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+				<soapenv:Body>
+					<' . $api_function . ' xmlns="urn:vim25">
+					<_this type="PropertyCollector">' . $this->api_info['propertyCollector'] . '</_this>
+					<specSet>
+						<propSet>
+							<type>' . htmlspecialchars($itemType, ENT_XML1, 'UTF-8') . '</type>
+							<all>' . ($getAll?"true":"false") . '</all>
+							'. $filterXML . '
+					   </propSet>
+						<objectSet>
+							<obj type="Folder">' . $this->api_info['rootFolder'] . '</obj>
 							<skip>false</skip>
-							<selectSet>
-							  <name>FolderTraversalSpec</name>
+							<selectSet xsi:type="TraversalSpec">
+								<name>folderTraversalSpec</name>
+								<type>Folder</type>
+								<path>childEntity</path>
+								<skip>false</skip>
+								<selectSet>
+									<name>folderTraversalSpec</name>
+								</selectSet>
+								<selectSet>
+									<name>datacenterHostTraversalSpec</name>
+								</selectSet>
+								<selectSet>
+									<name>datacenterVmTraversalSpec</name>
+								</selectSet>
+								<selectSet>
+									<name>datacenterDatastoreTraversalSpec</name>
+								</selectSet>
+								<selectSet>
+									<name>datacenterNetworkTraversalSpec</name>
+								</selectSet>
+								<selectSet>
+									<name>computeResourceRpTraversalSpec</name>
+								</selectSet>
+								<selectSet>
+									<name>computeResourceHostTraversalSpec</name>
+								</selectSet>
+								<selectSet>
+									<name>hostVmTraversalSpec</name>
+								</selectSet>
+								<selectSet>
+									<name>resourcePoolVmTraversalSpec</name>
+								</selectSet>
 							</selectSet>
-							<selectSet>
-							  <name>DataCenterVMTraversalSpec</name>
+							<selectSet xsi:type="TraversalSpec">
+								<name>datacenterDatastoreTraversalSpec</name>
+								<type>Datacenter</type>
+								<path>datastoreFolder</path>
+								<skip>false</skip>
+								<selectSet>
+									<name>folderTraversalSpec</name>
+								</selectSet>
 							</selectSet>
-						  </ns1:selectSet>
-						  <ns1:selectSet xsi:type=\"TraversalSpec\">
-							<name>DataCenterVMTraversalSpec</name>
-							<type>Datacenter</type>
-							<path>" . htmlspecialchars($folder, ENT_XML1, 'UTF-8') . "</path>
-							<skip>false</skip>
-							<selectSet>
-							  <name>FolderTraversalSpec</name>
+							<selectSet xsi:type="TraversalSpec">
+								<name>datacenterNetworkTraversalSpec</name>
+								<type>Datacenter</type>
+								<path>networkFolder</path>
+								<skip>false</skip>
+								<selectSet>
+									<name>folderTraversalSpec</name>
+								</selectSet>
 							</selectSet>
-						  </ns1:selectSet>
-						</ns1:objectSet>
-					  </ns1:specSet>
-					  </ns1:" . $api_function . ">
-				  </SOAP-ENV:Body>
-				</SOAP-ENV:Envelope>";
+							<selectSet xsi:type="TraversalSpec">
+								<name>datacenterVmTraversalSpec</name>
+								<type>Datacenter</type>
+								<path>vmFolder</path>
+								<skip>false</skip>
+								<selectSet>
+									<name>folderTraversalSpec</name>
+								</selectSet>
+							</selectSet>
+							<selectSet xsi:type="TraversalSpec">
+								<name>datacenterHostTraversalSpec</name>
+								<type>Datacenter</type>
+								<path>hostFolder</path>
+								<skip>false</skip>
+								<selectSet>
+									<name>folderTraversalSpec</name>
+								</selectSet>
+							</selectSet>
+							<selectSet xsi:type="TraversalSpec">
+								<name>computeResourceHostTraversalSpec</name>
+								<type>ComputeResource</type>
+								<path>host</path>
+								<skip>false</skip>
+							</selectSet>
+							<selectSet xsi:type="TraversalSpec">
+								<name>computeResourceRpTraversalSpec</name>
+								<type>ComputeResource</type>
+								<path>resourcePool</path>
+								<skip>false</skip>
+								<selectSet>
+									<name>resourcePoolTraversalSpec</name>
+								</selectSet>
+								<selectSet>
+									<name>resourcePoolVmTraversalSpec</name>
+								</selectSet>
+							</selectSet>
+							<selectSet xsi:type="TraversalSpec">
+								<name>resourcePoolTraversalSpec</name>
+								<type>ResourcePool</type>
+								<path>resourcePool</path>
+								<skip>false</skip>
+								<selectSet>
+									<name>resourcePoolTraversalSpec</name>
+								</selectSet>
+								<selectSet>
+									<name>resourcePoolVmTraversalSpec</name>
+								</selectSet>
+							</selectSet>
+							<selectSet xsi:type="TraversalSpec">
+								<name>hostVmTraversalSpec</name>
+								<type>HostSystem</type>
+								<path>vm</path>
+								<skip>false</skip>
+								<selectSet>
+									<name>folderTraversalSpec</name>
+								</selectSet>
+							</selectSet>
+							<selectSet xsi:type="TraversalSpec">
+								<name>resourcePoolVmTraversalSpec</name>
+								<type>ResourcePool</type>
+								<path>vm</path>
+								<skip>false</skip>
+							</selectSet>
+						</objectSet>
+					</specSet>
+					</' . $api_function . '>
+				</soapenv:Body>
+			</soapenv:Envelope>';	
 		
 		$this->lastRaw = $this->_callApi($xml);
 		$this->lastJson = $this->xml2json($this->lastRaw);
@@ -588,10 +680,9 @@ class VMWareAPI {
 			return $result;
 		}
 		
-		$this->restoreResultConfig();
 		$this->saveResultConfig();
 		$this->quickSetResultConfig(false, false, false, true);
-		$res = $this->getInventoryInfo("VirtualMachine", "vmFolder", ["name"], false);
+		$res = $this->getInventoryInfo("VirtualMachine", ["name"], false);
 		$this->restoreResultConfig();
 
 		$vmList = [];
@@ -625,11 +716,10 @@ class VMWareAPI {
 			return $result;
 		}
 		
-		$this->restoreResultConfig();
-		$vmList = $this->getVirtualMachines();
 		$this->saveResultConfig();
 		$this->quickSetResultConfig(false, false, false, true);
-		//$res = $api->getAvailMetrics("VirtualMachine", "vm-1844");
+		$vmList = $this->getVirtualMachines();
+
 		$vmList = $vmList['array'];
 		$metricIds = [];
 		$vmKeys = [];
@@ -684,9 +774,10 @@ class VMWareAPI {
 		return $result;
 	}
 
-	public function getHosts() {
+	public function getHostClusters() {
 		/*
-			This routine retrieves all Hosts and formats them in a nicely readable array/json
+			This routine retrieves all ComputeResources and formats them in a 
+			nicely readable array/json
 			
 			RETURNS:
 			Object containing the ID and Name of each Host/ComputeResource
@@ -698,10 +789,119 @@ class VMWareAPI {
 			return $result;
 		}
 		
-		$this->restoreResultConfig();
 		$this->saveResultConfig();
 		$this->quickSetResultConfig(false, false, false, true);
-		$res = $this->getInventoryInfo("ComputeResource", "hostFolder", ["name"], false);
+		$res = $this->getInventoryInfo("ComputeResource", ["name"], false);
+		$this->restoreResultConfig();
+
+		$hostList = [];
+		
+		foreach ($res["array"]["returnval"] as $host) {
+			$hostItem = ["obj_id"=>$host["obj"], "name"=>$host["propSet"]["val"]];
+			$hostList[$host["obj"]] = $hostItem;
+		}
+		
+		if ($this->sendRaw) $result['raw'] = "";
+		if ($this->sendHeaders) $result['headers'] = "";
+		if ($this->sendJson) $result['json'] = json_encode($hostList);
+		if ($this->sendArray) $result['array'] = $hostList;
+		
+		return $result;
+	}
+
+	public function getHostClusterMetricDefs() {
+		/*
+			This routine retrieves all ComputeResources along with the 
+			available metrics for each of them and formats them in a nicely 
+			readable array/json
+			
+			RETURNS:
+				- Object of metric definitions associated to hosts
+				- Object of all metric definitions
+		*/
+		$result = $this->prepResult();
+		
+		if (!$this->validSession) {
+			$result['error'] = "Must log in before issuing commands";
+			return $result;
+		}
+		
+		$this->saveResultConfig();
+		$this->quickSetResultConfig(false, false, false, true);
+		$hostList = $this->getHostClusters();
+		$hostList = $hostList['array'];
+		$metricIds = [];
+		$hostKeys = [];
+		foreach ($hostList as $key=>$host) $hostKeys[] = $key;
+		
+		foreach ($hostKeys as $key) {
+			$hostList[$key]['metric_defs'] = [];
+			$res = $this->getAvailMetrics("ComputeResource", $hostList[$key]['obj_id']);
+			foreach ($res['array']['returnval'] as $metricDef) {
+				$hostList[$key]['metric_defs'][] = $metricDef;
+				$metricIds[] = $metricDef['counterId'];
+			}
+		}
+		
+		$metricIds = array_unique($metricIds);
+		$res = $this->getMetricInfo($metricIds);
+		$this->restoreResultConfig();
+		$metricDetails = [];
+
+		foreach ($res['array']['returnval'] as $raw_metric) {
+			$metricDetails[$raw_metric['key']] = [
+				"counterId"=>$raw_metric['key'],
+				"name"=>$raw_metric['groupInfo']['label'] . " - " . $raw_metric['nameInfo']['label'],
+				"desc"=>$raw_metric['nameInfo']['summary'],
+				"unit"=>$raw_metric['unitInfo']['label'],
+				"rollupType"=>$raw_metric['rollupType'],
+				"statsType"=>$raw_metric['statsType'],
+				"level"=>$raw_metric['level']
+			];
+		}
+		
+		foreach ($hostKeys as $key) {
+			foreach ($hostList[$key]['metric_defs'] as $idx=>$md) {
+				$instance = $md['instance'];
+				$counterId = $md['counterId'];
+				$hostList[$key]['metric_defs'][$idx] = $metricDetails[$counterId];
+				$hostList[$key]['metric_defs'][$idx]['instance'] = $instance;
+			}
+		}
+		
+		if ($this->sendRaw) $result['raw'] = "";
+		if ($this->sendHeaders) $result['headers'] = "";
+		if ($this->sendJson) {
+			$result['json'] = json_encode($hostList);
+			$result['metricJson'] = json_encode($metricDetails);
+		}
+		if ($this->sendArray) {
+			$result['array'] = $hostList;
+			$result['metricArray'] = $metricDetails;
+		}
+
+		return $result;
+	}
+
+	public function getHosts() {
+		/*
+			This routine retrieves all Hosts and formats them in a nicely readable array/json
+			
+			RETURNS:
+			Object containing the ID and Name of each HostSystem
+		*/
+		$result = $this->prepResult();
+		
+		if (!$this->validSession) {
+			$result['error'] = "Must log in before issuing commands";
+			return $result;
+		}
+		
+		$this->saveResultConfig();
+		$this->quickSetResultConfig(false, false, false, true);
+
+		$res = $this->getInventoryInfo("HostSystem", ["name"], false);
+
 		$this->restoreResultConfig();
 
 		$hostList = [];
@@ -721,7 +921,7 @@ class VMWareAPI {
 
 	public function getHostMetricDefs() {
 		/*
-			This routine retrieves all Host/ComputeResources along with the 
+			This routine retrieves all HostSystems along with the 
 			available metrics for each of them and formats them in a nicely 
 			readable array/json
 			
@@ -736,11 +936,13 @@ class VMWareAPI {
 			return $result;
 		}
 		
-		$this->restoreResultConfig();
-		$hostList = $this->getHosts();
 		$this->saveResultConfig();
 		$this->quickSetResultConfig(false, false, false, true);
+
+		$hostList = $this->getHosts();
+
 		$hostList = $hostList['array'];
+
 		$metricIds = [];
 		$hostKeys = [];
 		foreach ($hostList as $key=>$host) $hostKeys[] = $key;
@@ -802,21 +1004,21 @@ class VMWareAPI {
 	private $_avgApiCallTm = 0;
 	private $_totApiCallTm = 0;
 	private $_lastApiCall = 0;
-	private $headers = ["SOAPAction: \"urn:vim25/4.0\"", "User-Agent: InsightETE VMWare SDK 1.1", "Content-Type: text/xml; charset=UTF-8"];
+	private $headers = ["SOAPAction: \"urn:vim25/4.0\"", "User-Agent: VMWareAPI Class 1.1", "Content-Type: text/xml; charset=UTF-8"];
 	private $api_info = [];
 	
 	private function saveResultConfig() {
-		$this->savedResultConfig['sendRaw'] = $this->sendRaw;
-		$this->savedResultConfig['sendHeaders'] = $this->sendHeaders;
-		$this->savedResultConfig['sendJson'] = $this->sendJson;
-		$this->savedResultConfig['sendArray'] = $this->sendArray;
+		array_push($this->savedResultConfig, ["sendRaw"=>$this->sendRaw, "sendHeaders"=>$this->sendHeaders, "sendJson"=>$this->sendJson, "sendArray"=>$this->sendArray]);
 	}
 	
 	private function restoreResultConfig() {
-		$this->sendRaw = $this->savedResultConfig['sendRaw'];
-		$this->sendHeaders = $this->savedResultConfig['sendHeaders'];
-		$this->sendJson = $this->savedResultConfig['sendJson'];
-		$this->sendArray = $this->savedResultConfig['sendArray'];
+		$popped = array_pop($this->savedResultConfig);
+		if (is_array($popped)) {
+			$this->sendRaw = $popped['sendRaw'];
+			$this->sendHeaders = $popped['sendHeaders'];
+			$this->sendJson = $popped['sendJson'];
+			$this->sendArray = $popped['sendArray'];
+		}
 	}
 	
 	private function quickSetResultConfig($r, $h, $j, $a) {
@@ -858,7 +1060,7 @@ class VMWareAPI {
 			foreach(libxml_get_errors() as $error) {
 				echo $error->message . "\n";
 			}
-			die();
+			return false;
 		}
 		
 		foreach($xml->getDocNamespaces() as $strPrefix => $strNamespace) {
