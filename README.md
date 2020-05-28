@@ -22,16 +22,20 @@ include_once "..\class\vmwareapi.class.php";
 $api = new VMWareAPI(["strictSSL"=>false,"url"=>"https://your.url/sdk/", "username"=>"root", "password"=>"yourpass"]);
 $api=>login();
 
-// Get the names of all the HOSTS (host groups) in the cluster
-$res = $api->getInventoryInfo("ComputeResource", "hostFolder", ["name"], false);
+// Get the names of all the host groups in the cluster
+$res = $api->getInventoryInfo("ComputeResource", ["name"], false);
+print_r($res);
+
+// Get the names of all the host systems in the cluster
+$res = $api->getInventoryInfo("HostSystem", ["name"], false);
 print_r($res);
 
 // Get the names of all the VMs (Guests) in the cluster
-$res = $api->getInventoryInfo("VirtualMachine", "vmFolder", ["name"], false);
+$res = $api->getInventoryInfo("VirtualMachine", ["name"], false);
 print_r($res);
 
 // Get the names of all the Virtual Switches in the cluster
-$res = $api->getInventoryInfo("DistributedVirtualSwitch", "networkFolder", ["name"], false);
+$res = $api->getInventoryInfo("DistributedVirtualSwitch", ["name"], false);
 print_r($res);
 
 // Get the metric IDs for a particular VM
