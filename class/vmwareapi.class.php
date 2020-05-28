@@ -33,14 +33,14 @@ class VMWareAPI {
 	// otherwise will send a blank string.
 	// Note: for direct API calls, this will return the raw XML from
 	//       the server.
-	public $sendRaw = true;
+	public $sendRaw = false;
 	
 	// Send back the HTTP headers from the API server, if applicable,
 	// otherwise will send back a blank string.
-	public $sendHeaders = true;
+	public $sendHeaders = false;
 	
 	// Send back the resulting object in JSON form
-	public $sendJson = true;
+	public $sendJson = false;
 	
 	// Send back the resulting object in a PHP array
 	public $sendArray = true;
@@ -241,7 +241,7 @@ class VMWareAPI {
 			$xml = "<SOAP-ENV:Envelope SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:SOAP-ENC=\"http://schemas.xmlsoap.org/soap/encoding/\">
 					<SOAP-ENV:Body>
 						<" . $api_function . ">
-							<_this>SessionManager</_this>
+							<_this>" . $this->api_info['sessionManager'] . "</_this>
 							<userName>" . htmlspecialchars($this->username, ENT_XML1, 'UTF-8') . "</userName>
 							<password>" . htmlspecialchars($this->password, ENT_XML1, 'UTF-8') . "</password>
 						</" . $api_function . ">
@@ -901,14 +901,21 @@ class VMWareAPI {
 		$this->quickSetResultConfig(false, false, false, true);
 
 		$res = $this->getInventoryInfo("HostSystem", ["name"], false);
-
+		//print_r($res);
 		$this->restoreResultConfig();
 
 		$hostList = [];
-		
-		foreach ($res["array"]["returnval"] as $host) {
-			$hostItem = ["obj_id"=>$host["obj"], "name"=>$host["propSet"]["val"]];
-			$hostList[$host["obj"]] = $hostItem;
+		if (isset($res['array']['returnval'][0])) {
+			// Multiple hosts
+			foreach ($res["array"]["returnval"] as $host) {
+				//print_r($host);
+				$hostItem = ["obj_id"=>$host["obj"], "name"=>$host["propSet"]["val"]];
+				$hostList[$host["obj"]] = $hostItem;
+			}
+		} else {
+			// Only one host
+			$hostItem = ["obj_id"=>$res['array']['returnval']["obj"], "name"=>$res['array']['returnval']["propSet"]["val"]];
+			$hostList[$res['array']['returnval']["obj"]] = $hostItem;
 		}
 		
 		if ($this->sendRaw) $result['raw'] = "";
@@ -949,7 +956,10 @@ class VMWareAPI {
 		
 		foreach ($hostKeys as $key) {
 			$hostList[$key]['metric_defs'] = [];
-			$res = $this->getAvailMetrics("ComputeResource", $hostList[$key]['obj_id']);
+			$res = $this->getAvailMetrics("HostSystem", $hostList[$key]['obj_id']);
+			
+			//print_r($res);
+			
 			foreach ($res['array']['returnval'] as $metricDef) {
 				$hostList[$key]['metric_defs'][] = $metricDef;
 				$metricIds[] = $metricDef['counterId'];
@@ -969,7 +979,7 @@ class VMWareAPI {
 				"unit"=>$raw_metric['unitInfo']['label'],
 				"rollupType"=>$raw_metric['rollupType'],
 				"statsType"=>$raw_metric['statsType'],
-				"level"=>$raw_metric['level']
+				"level"=>(isset($raw_metric['level'])?$raw_metric['level']:"")
 			];
 		}
 		
